@@ -1,7 +1,7 @@
 [app]
 
-title = Islam Status Pro
-package.name = islamstatuspro
+title = حالات واتس اب اسلاميه
+package.name = halatwatssislamia
 package.domain = com.islam
 
 source.dir = .
@@ -9,7 +9,7 @@ source.include_exts = py,png,jpg,kv
 
 version = 1.0
 
-requirements = python3,kivy
+requirements = python3,kivy,pillow
 
 orientation = portrait
 fullscreen = 0
