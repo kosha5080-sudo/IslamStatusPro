@@ -5,8 +5,7 @@ package.name = halatwatssislamia
 package.domain = com.islam
 
 source.dir = .
-source.include_exts = py,png,jpg,kv
-
+source.include_exts = py,png,jpg,kv,ttf
 version = 1.0
 
 requirements = python3,kivy,pillow
