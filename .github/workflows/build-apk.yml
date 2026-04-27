@@ -14,10 +14,10 @@ jobs:
       - name: Build APK
         uses: digreatbrian/buildozer-action@v2
         with:
-          command: buildozer android debug
+          buildozer-cmd: buildozer android debug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: APK
+          name: app-release
           path: bin/*.apk
