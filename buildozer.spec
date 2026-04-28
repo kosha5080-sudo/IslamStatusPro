@@ -1,24 +1,25 @@
 [app]
 
-title = حالات واتس اب اسلاميه
+title = Islamic WhatsApp Status
 package.name = halatwatssislamia
 package.domain = com.islam
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
-version = 1.0
+version = 1.2
 
 requirements = python3,kivy,pillow,arabic-reshaper
+
+orientation = portrait
 fullscreen = 0
 
-android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE,READ_MEDIA_IMAGES,READ_MEDIA_VIDEO
+android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
 
 android.api = 30
 android.minapi = 21
 android.sdk = 30
 android.ndk = 25b
 android.accept_sdk_license = True
-android.skip_update = False
 
 [buildozer]
 
