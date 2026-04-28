@@ -1,4 +1,4 @@
-import os, random, datetime
+import os, random, datetime, math
 from PIL import Image as PILImage, ImageDraw, ImageFont
 
 from kivy.app import App
@@ -14,14 +14,21 @@ try:
 except:
     arabic_reshaper = None
 
-Window.clearcolor = (0.03, 0.04, 0.03, 1)
+Window.clearcolor = (0.02, 0.025, 0.02, 1)
+
 FONT_FILE = "arabic.ttf"
+SAVE_DIR = "/storage/emulated/0/Pictures/IslamStatusPro"
 
 TEXTS = [
-    ("آية اليوم", "واذكروا الله كثيرا لعلكم تفلحون"),
-    ("حديث اليوم", "من دل على خير فله مثل أجر فاعله"),
-    ("دعاء اليوم", "اللهم إني أسألك الهدى والتقى والعفاف والغنى"),
-    ("ذكر اليوم", "سبحان الله وبحمده سبحان الله العظيم"),
+    ("آية اليوم", "واذكروا الله كثيرا لعلكم تفلحون", "سورة الأنفال"),
+    ("آية اليوم", "إن مع العسر يسرا", "سورة الشرح"),
+    ("آية اليوم", "ألا بذكر الله تطمئن القلوب", "سورة الرعد"),
+    ("حديث اليوم", "من دل على خير فله مثل أجر فاعله", "رواه مسلم"),
+    ("حديث اليوم", "الكلمة الطيبة صدقة", "متفق عليه"),
+    ("دعاء اليوم", "اللهم إني أسألك الهدى والتقى والعفاف والغنى", "دعاء نبوي"),
+    ("دعاء اليوم", "ربنا آتنا في الدنيا حسنة وفي الآخرة حسنة وقنا عذاب النار", "دعاء قرآني"),
+    ("ذكر اليوم", "سبحان الله وبحمده سبحان الله العظيم", "ذكر عظيم"),
+    ("ذكر اليوم", "لا إله إلا الله وحده لا شريك له", "ذكر اليوم"),
 ]
 
 def ar(txt):
@@ -38,64 +45,133 @@ def get_font(size):
             pass
     return ImageFont.load_default()
 
-def make_image(path):
+def wrap_words(text, max_len=18):
+    words = text.split()
+    lines, line = [], ""
+    for word in words:
+        test = (line + " " + word).strip()
+        if len(test) <= max_len:
+            line = test
+        else:
+            if line:
+                lines.append(line)
+            line = word
+    if line:
+        lines.append(line)
+    return lines
+
+def arabic_date():
+    today = datetime.date.today()
+    months = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"]
+    days = ["الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت","الأحد"]
+    return f"{days[today.weekday()]} - {today.day} {months[today.month-1]} {today.year}"
+
+def draw_center(draw, xy, text, font, fill):
+    draw.text(xy, ar(text), font=font, fill=fill, anchor="mm")
+
+def make_image(path, design=1):
     w, h = 1080, 1920
-    img = PILImage.new("RGB", (w, h), (12, 28, 18))
+
+    if design == 1:
+        bg = (8, 32, 20)
+        card = (24, 26, 24)
+        gold = (215, 174, 88)
+        white = (245, 245, 235)
+    elif design == 2:
+        bg = (238, 227, 206)
+        card = (252, 246, 232)
+        gold = (150, 105, 45)
+        white = (25, 55, 35)
+    else:
+        bg = (5, 6, 7)
+        card = (18, 18, 18)
+        gold = (225, 178, 70)
+        white = (245, 245, 245)
+
+    img = PILImage.new("RGB", (w, h), bg)
     draw = ImageDraw.Draw(img)
 
-    gold = (212,170,82)
-    white = (245,245,235)
+    big = get_font(78)
+    title_font = get_font(64)
+    mid = get_font(50)
+    small = get_font(36)
+    tiny = get_font(30)
 
-    big = get_font(70)
-    mid = get_font(45)
-    small = get_font(34)
+    kind, text, ref = random.choice(TEXTS)
 
-    kind, text = random.choice(TEXTS)
+    draw.rounded_rectangle((45, 45, w-45, h-45), radius=45, outline=gold, width=5)
+    draw.rounded_rectangle((80, 95, w-80, 380), radius=38, outline=gold, width=3)
 
-    draw.rounded_rectangle((40,40,w-40,h-40), radius=40, outline=gold, width=5)
+    draw_center(draw, (w/2, 175), "حالات واتس اب اسلاميه", title_font, gold)
+    draw_center(draw, (w/2, 260), "تصميم يومي متجدد", small, white)
+    draw_center(draw, (w/2, 325), arabic_date(), tiny, gold)
 
-    draw.text((w/2,150), ar("حالات واتس اب اسلاميه"), fill=gold, font=big, anchor="mm")
+    draw.rounded_rectangle((135, 520, w-135, 1180), radius=40, fill=card, outline=gold, width=3)
+    draw_center(draw, (w/2, 615), kind, mid, gold)
 
-    draw.rounded_rectangle((120,500,w-120,1200), radius=35, fill=(25,25,25), outline=gold, width=3)
+    y = 790
+    for line in wrap_words(text, 18):
+        draw_center(draw, (w/2, y), line, mid, white)
+        y += 95
 
-    draw.text((w/2,600), ar(kind), fill=gold, font=mid, anchor="mm")
-    draw.text((w/2,850), ar(text), fill=white, font=mid, anchor="mm")
+    draw_center(draw, (w/2, 1105), ref, small, gold)
 
-    today = datetime.date.today().strftime("%d / %m / %Y")
-    draw.text((w/2,1500), today, fill=white, font=small, anchor="mm")
+    draw.line((260, 1300, 820, 1300), fill=gold, width=3)
+    draw_center(draw, (w/2, 1390), "اللهم اجعلها صدقة جارية", small, white)
 
-    draw.text((w/2,1780), "ISLAM STATUS PRO", fill=gold, font=small, anchor="mm")
+    draw.rounded_rectangle((150, 1500, w-150, 1625), radius=30, outline=gold, width=3)
+    draw_center(draw, (w/2, 1562), arabic_date(), small, white)
+
+    draw_center(draw, (w/2, 1775), "ISLAM STATUS PRO VIP", tiny, gold)
 
     img.save(path, quality=95)
 
 class MyApp(App):
     def build(self):
-        self.save_dir = "/storage/emulated/0/Pictures"
-        os.makedirs(self.save_dir, exist_ok=True)
+        os.makedirs(SAVE_DIR, exist_ok=True)
+        self.design = 1
+        self.last_path = ""
 
-        root = BoxLayout(orientation="vertical", padding=10, spacing=10)
+        root = BoxLayout(orientation="vertical", padding=8, spacing=8)
 
-        self.preview = Image(size_hint=(1,0.8), allow_stretch=True)
-        self.msg = Label(text="Ready", size_hint=(1,0.08))
+        self.preview = Image(size_hint=(1, 0.78), allow_stretch=True, keep_ratio=True)
+        self.msg = Label(text="VIP Ready", size_hint=(1, 0.06), font_size=18)
 
-        btn = Button(text="Create New Status", size_hint=(1,0.12))
-        btn.bind(on_press=self.generate)
+        row = BoxLayout(size_hint=(1, 0.08), spacing=6)
+
+        for i in [1, 2, 3]:
+            b = Button(text=f"Design {i}", font_size=16)
+            b.bind(on_press=lambda x, d=i: self.generate_design(d))
+            row.add_widget(b)
+
+        btn_new = Button(text="Create New VIP Status", size_hint=(1, 0.08), font_size=20)
+        btn_new.bind(on_press=self.generate_random)
 
         root.add_widget(self.preview)
         root.add_widget(self.msg)
-        root.add_widget(btn)
+        root.add_widget(row)
+        root.add_widget(btn_new)
 
-        self.generate()
+        self.generate_design(1)
         return root
 
-    def generate(self, *args):
+    def make_path(self, design):
+        now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+        return os.path.join(SAVE_DIR, f"islam_status_vip_{design}_{now}.jpg")
+
+    def generate_design(self, design):
         try:
-            path = os.path.join(self.save_dir, "islam_status.jpg")
-            make_image(path)
+            self.design = design
+            path = self.make_path(design)
+            make_image(path, design)
+            self.last_path = path
             self.preview.source = path
             self.preview.reload()
-            self.msg.text = "Saved in Pictures/islam_status.jpg"
+            self.msg.text = f"Saved Design {design} in Pictures/IslamStatusPro"
         except Exception as e:
-            self.msg.text = str(e)
+            self.msg.text = "Error: " + str(e)
+
+    def generate_random(self, *args):
+        self.generate_design(random.choice([1, 2, 3]))
 
 MyApp().run()
