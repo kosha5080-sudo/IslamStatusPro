@@ -1,135 +1,62 @@
-import os, random, datetime, json
-from PIL import Image as PILImage, ImageDraw, ImageFont
+import os
+import random
+import datetime
 
 from kivy.app import App
+from kivy.core.window import Window
+from kivy.resources import resource_find
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.label import Label
-from kivy.core.window import Window
-from kivy.resources import resource_find
+
+from PIL import Image as PILImage
+from PIL import ImageDraw, ImageFont
 
 try:
     import arabic_reshaper
-    from bidi.algorithm import get_display
 except:
     arabic_reshaper = None
-    get_display = None
 
-Window.clearcolor = (0.02, 0.025, 0.02, 1)
 
-FONT_FILE = "arabic.ttf"
+Window.clearcolor = (0, 0, 0, 1)
+
 SAVE_DIR = "/storage/emulated/0/Pictures/IslamStatusPro"
-SETTINGS_FILE = "settings.json"
+FONT_FILE = "arabic.ttf"
 
 APP_TITLE_AR = "حالات واتس اب اسلاميه"
 APP_TITLE_EN = "Islamic WhatsApp Status"
+
+
+# ==========================
+# DATA
+# ==========================
 
 AYAT_AR = [
 "ألا بذكر الله تطمئن القلوب",
 "إن مع العسر يسرا",
 "واستعينوا بالصبر والصلاة",
 "وقل رب زدني علما",
-"إن الله مع الصابرين",
 "فاذكروني أذكركم",
-"والله خير الرازقين",
 "ادعوني أستجب لكم",
 "ومن يتوكل على الله فهو حسبه",
 "إن الله يحب المحسنين",
-"إن الله غفور رحيم",
-"ورحمتي وسعت كل شيء",
-"لا تحزن إن الله معنا",
-"رب اشرح لي صدري",
-"وما توفيقي إلا بالله",
-"إن ربي قريب مجيب",
-"سلام عليكم بما صبرتم",
-"والله يحب الصابرين",
-"إن الله يحب المتوكلين",
-"وكان الله على كل شيء قديرا",
-"عسى الله أن يأتي بالفتح",
-"فصبر جميل",
-"إن الله لطيف خبير",
-"إن الله سميع بصير",
-"إن الله واسع عليم",
-"ومن يتق الله يجعل له مخرجا",
-"وقل اعملوا فسيرى الله عملكم",
-"إن أكرمكم عند الله أتقاكم",
-"فإن مع العسر يسرا",
-"وهو أرحم الراحمين",
-"ربنا آتنا في الدنيا حسنة",
-"إن الله يحب التوابين",
-"إن الله لا يضيع أجر المحسنين",
-"وكان فضل الله عليك عظيما",
-"وهو على كل شيء وكيل",
-"إن الله عليم حكيم",
-"إن رحمة الله قريب من المحسنين",
-"الله نور السماوات والأرض",
-"وما عند الله خير وأبقى",
-"رب زدني علما",
-"والآخرة خير وأبقى",
-"ربنا لا تزغ قلوبنا",
-"ربنا تقبل منا",
-"ربنا اغفر لنا ذنوبنا",
-"ربنا ظلمنا أنفسنا",
-"ربنا عليك توكلنا",
-"إياك نعبد وإياك نستعين",
-"الحمد لله رب العالمين",
-"مالك يوم الدين",
-"اهدنا الصراط المستقيم"
-]
+"إن الله مع الصابرين",
+"والله خير الرازقين"
+] * 5
 
-DOAA_AR = [
-"اللهم اغفر لي ولوالدي",
-"اللهم ارزقني من حيث لا أحتسب",
-"اللهم فرج همي ويسر أمري",
-"اللهم اشف مرضانا ومرضى المسلمين",
-"اللهم ثبت قلبي على دينك",
-"اللهم ارزقني السعادة والطمأنينة",
-"اللهم اجعل القرآن ربيع قلبي",
-"اللهم اهدني واهد بي",
-"اللهم حسن خاتمتي",
-"اللهم ارزقني الفردوس الأعلى",
-"اللهم بارك لي في رزقي",
-"اللهم اشرح صدري ويسر أمري",
-"اللهم اجعل يومي خيرا وبركة",
-"اللهم استر عيوبي واغفر ذنوبي",
-"اللهم قني شر نفسي",
-"اللهم اجعلني من الشاكرين",
-"اللهم اجعلني من الذاكرين",
-"اللهم لا تجعل الدنيا أكبر همي",
-"اللهم أصلح لي شأني كله",
-"اللهم ارزقني قلبا سليما",
-"اللهم اجعلني سببا للخير",
-"اللهم ارزقني علما نافعا",
-"اللهم ارزقني عملا متقبلا",
-"اللهم ارزقني رزقا طيبا",
-"اللهم احفظ أهلي وأحبتي",
-"اللهم اجبر خاطري جبرا يليق بكرمك",
-"اللهم افتح لي أبواب رحمتك",
-"اللهم افتح لي أبواب رزقك",
-"اللهم ارزقني حسن الظن بك",
-"اللهم اجعلني من عبادك الصالحين",
-"اللهم ارفع قدري واشرح صدري",
-"اللهم اجعل لي من كل هم فرجا",
-"اللهم اجعل لي من كل ضيق مخرجا",
-"اللهم ارزقني راحة القلب",
-"اللهم طهر قلبي من الحقد",
-"اللهم طهر لساني من الكذب",
-"اللهم طهر عملي من الرياء",
-"اللهم اجعلني مباركا أينما كنت",
-"اللهم اكتب لي الخير حيث كان",
-"اللهم رضني بما قسمت لي",
-"اللهم اجعلني ممن توكل عليك فكفيته",
-"اللهم أعني على ذكرك وشكرك",
-"اللهم أعني على حسن عبادتك",
-"اللهم ارزقني توبة نصوحا",
-"اللهم اجعل قبري روضة من رياض الجنة",
-"اللهم قني عذاب النار",
-"اللهم صل وسلم على نبينا محمد",
-"اللهم ارحم موتانا وموتى المسلمين",
-"اللهم تقبل دعائي",
-"اللهم لا تردني خائبا"
-]
+AHADITH_AR = [
+"إنما الأعمال بالنيات",
+"الدين النصيحة",
+"الكلمة الطيبة صدقة",
+"تبسمك في وجه أخيك صدقة",
+"لا تغضب",
+"يسروا ولا تعسروا",
+"الطهور شطر الإيمان",
+"خيركم من تعلم القرآن وعلمه",
+"المؤمن للمؤمن كالبنيان",
+"من حسن إسلام المرء تركه ما لا يعنيه"
+] * 5
 
 AZKAR_AR = [
 "سبحان الله",
@@ -138,351 +65,364 @@ AZKAR_AR = [
 "لا إله إلا الله",
 "سبحان الله وبحمده",
 "سبحان الله العظيم",
+"أستغفر الله",
 "لا حول ولا قوة إلا بالله",
-"أستغفر الله العظيم",
-"اللهم صل وسلم على نبينا محمد",
 "حسبي الله ونعم الوكيل",
-"لا إله إلا أنت سبحانك إني كنت من الظالمين",
-"رضيت بالله ربا وبالإسلام دينا",
-"سبحان الله عدد خلقه",
-"سبحان الله رضا نفسه",
-"سبحان الله زنة عرشه",
-"سبحان الله مداد كلماته",
-"الحمد لله رب العالمين",
-"الله أكبر كبيرا",
-"الحمد لله كثيرا",
-"سبحان الله بكرة وأصيلا",
-"لا إله إلا الله وحده لا شريك له",
-"له الملك وله الحمد",
-"وهو على كل شيء قدير",
-"أستغفر الله وأتوب إليه",
-"يا حي يا قيوم برحمتك أستغيث",
-"اللهم إنك عفو تحب العفو فاعف عني",
-"رب اغفر لي وتب علي",
-"لا إله إلا الله محمد رسول الله",
-"سبحانك اللهم وبحمدك",
-"أشهد أن لا إله إلا أنت",
-"أعوذ بكلمات الله التامات من شر ما خلق",
-"بسم الله توكلت على الله",
-"اللهم بك أصبحنا وبك أمسينا",
-"اللهم بك نحيا وبك نموت",
-"اللهم أنت ربي لا إله إلا أنت",
-"خلقتني وأنا عبدك",
-"وأنا على عهدك ووعدك ما استطعت",
-"أبوء لك بنعمتك علي",
-"وأبوء بذنبي فاغفر لي",
-"إنه لا يغفر الذنوب إلا أنت",
-"اللهم عافني في بدني",
-"اللهم عافني في سمعي",
-"اللهم عافني في بصري",
-"اللهم إني أعوذ بك من الكفر والفقر",
-"اللهم إني أعوذ بك من عذاب القبر",
-"حسبي الله لا إله إلا هو",
-"عليه توكلت",
-"وهو رب العرش العظيم",
-"اللهم اجعلني من التوابين",
-"اللهم اجعلني من المتطهرين"
-]
+"اللهم صل وسلم على نبينا محمد"
+] * 5
 
-AHADITH_AR = [
-"إنما الأعمال بالنيات",
-"الدين النصيحة",
-"الكلمة الطيبة صدقة",
-"تبسمك في وجه أخيك صدقة",
-"من حسن إسلام المرء تركه ما لا يعنيه",
-"لا تغضب",
-"يسروا ولا تعسروا",
-"بشروا ولا تنفروا",
-"الطهور شطر الإيمان",
-"المسلم من سلم المسلمون من لسانه ويده",
-"خيركم من تعلم القرآن وعلمه",
-"من كان يؤمن بالله واليوم الآخر فليقل خيرا أو ليصمت",
-"لا يؤمن أحدكم حتى يحب لأخيه ما يحب لنفسه",
-"اتق الله حيثما كنت",
-"اتبع السيئة الحسنة تمحها",
-"خالق الناس بخلق حسن",
-"الراحمون يرحمهم الرحمن",
-"أحب الأعمال إلى الله أدومها وإن قل",
-"من دل على خير فله مثل أجر فاعله",
-"من لا يشكر الناس لا يشكر الله",
-"المؤمن للمؤمن كالبنيان",
-"احرص على ما ينفعك",
-"استعن بالله ولا تعجز",
-"لا ضرر ولا ضرار",
-"الدال على الخير كفاعله",
-"من صمت نجا",
-"الحياء شعبة من الإيمان",
-"خير الناس أنفعهم للناس",
-"من تواضع لله رفعه",
-"إن الله جميل يحب الجمال",
-"إن الرفق لا يكون في شيء إلا زانه",
-"أفشوا السلام بينكم",
-"تهادوا تحابوا",
-"إماطة الأذى عن الطريق صدقة",
-"البر حسن الخلق",
-"المسلم أخو المسلم",
-"من ستر مسلما ستره الله",
-"إن الله يحب إذا عمل أحدكم عملا أن يتقنه",
-"طلب العلم فريضة",
-"خيركم خيركم لأهله",
-"السواك مطهرة للفم",
-"الدعاء هو العبادة",
-"إن الله طيب لا يقبل إلا طيبا",
-"من كان في حاجة أخيه كان الله في حاجته",
-"الكلمة الطيبة صدقة",
-"رحم الله رجلا سمحا",
-"اللهم أعني على ذكرك وشكرك",
-"لا يؤمن أحدكم حتى أكون أحب إليه",
-"المؤمن القوي خير وأحب إلى الله",
-"إن الصدق يهدي إلى البر"
-]
+DOAA_AR = [
+"اللهم اغفر لي ولوالدي",
+"اللهم ارزقني من حيث لا أحتسب",
+"اللهم فرج همي ويسر أمري",
+"اللهم ثبت قلبي على دينك",
+"اللهم اجعل القرآن ربيع قلبي",
+"اللهم اشف مرضانا",
+"اللهم اجعلني من الصالحين",
+"اللهم اهدني واهد بي",
+"اللهم ارزقني حسن الخاتمة",
+"اللهم ارزقني راحة القلب"
+] * 5
 
-# English content
+
 AYAT_EN = [
 "Indeed, with hardship comes ease.",
-"Remember Allah often so you may succeed.",
-"Verily, in the remembrance of Allah do hearts find rest.",
-"Seek help through patience and prayer.",
-"My success is only by Allah.",
-"And whoever relies upon Allah, He is sufficient for him.",
-"Call upon Me; I will respond to you.",
-"Allah loves the doers of good.",
+"Remember Allah often.",
+"Call upon Me; I will respond.",
 "Allah is with the patient.",
-"Say: My Lord, increase me in knowledge."
-] * 5
+"Allah loves the doers of good."
+] * 10
 
-DOAA_EN = [
-"O Allah, forgive me and my parents.",
-"O Allah, grant me peace of heart.",
-"O Allah, make this day blessed.",
-"O Allah, guide me and guide through me.",
-"O Allah, grant me a good ending.",
-"O Allah, open the doors of mercy for me.",
-"O Allah, provide for me from where I do not expect.",
-"O Allah, make the Quran the spring of my heart.",
-"O Allah, relieve my worries.",
-"O Allah, accept my prayers."
-] * 5
+AHADITH_EN = [
+"Actions are judged by intentions.",
+"A good word is charity.",
+"Do not become angry.",
+"Make things easy.",
+"Purity is half of faith."
+] * 10
 
 AZKAR_EN = [
 "Glory be to Allah.",
 "All praise is due to Allah.",
 "Allah is the Greatest.",
 "There is no god but Allah.",
-"Glory be to Allah and praise be to Him.",
-"Glory be to Allah the Great.",
-"There is no power except with Allah.",
-"I seek forgiveness from Allah.",
-"O Allah, send blessings upon Muhammad.",
-"Allah is sufficient for me."
-] * 5
+"I seek forgiveness from Allah."
+] * 10
 
-AHADITH_EN = [
-"Actions are judged by intentions.",
-"Religion is sincere advice.",
-"A good word is charity.",
-"Smiling at your brother is charity.",
-"Do not become angry.",
-"Make things easy, not difficult.",
-"Give glad tidings, do not repel.",
-"Purity is half of faith.",
-"The best of you are those who learn and teach the Quran.",
-"Whoever believes in Allah should speak good or remain silent."
-] * 5
+DOAA_EN = [
+"O Allah forgive me.",
+"O Allah guide me.",
+"O Allah grant me peace.",
+"O Allah bless my day.",
+"O Allah accept my prayer."
+] * 10
 
-def reshape_ar(txt):
-    if arabic_reshaper and get_display:
-        return get_display(arabic_reshaper.reshape(txt))
-    return txt
 
-def is_arabic(lang):
-    return lang == "ar"
+# ==========================
+# HELPERS
+# ==========================
+
+def reshape_ar(text):
+    if arabic_reshaper:
+        try:
+            return arabic_reshaper.reshape(text)[::-1]
+        except:
+            return text[::-1]
+    return text[::-1]
+
 
 def get_font(size):
-    p = resource_find(FONT_FILE)
-    if p:
+    path = resource_find(FONT_FILE)
+    if path:
         try:
-            return ImageFont.truetype(p, size)
+            return ImageFont.truetype(path, size)
         except:
             pass
     return ImageFont.load_default()
 
-def draw_text(draw, x, y, text, font, color, lang="ar"):
-    if is_arabic(lang):
-        text = reshape_ar(text)
-    draw.text((x, y), text, font=font, fill=color, anchor="mm")
 
 def date_text(lang):
     today = datetime.date.today()
+
     if lang == "ar":
-        months = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"]
-        days = ["الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت","الأحد"]
-        return f"{days[today.weekday()]} - {today.day} {months[today.month-1]} {today.year}"
+        months = [
+            "يناير","فبراير","مارس","أبريل","مايو","يونيو",
+            "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"
+        ]
+
+        days = [
+            "الإثنين","الثلاثاء","الأربعاء","الخميس",
+            "الجمعة","السبت","الأحد"
+        ]
+
+        day_name = reshape_ar(days[today.weekday()])
+        month_name = reshape_ar(months[today.month - 1])
+
+        return f"{today.year} {month_name} {today.day} - {day_name}"
+
     return today.strftime("%A - %d %B %Y")
+
+
+def draw_center(draw, x, y, text, font, color, lang="ar", plain=False):
+    if lang == "ar" and not plain:
+        text = reshape_ar(text)
+
+    draw.text((x, y), text, fill=color, font=font, anchor="mm")
+
 
 def wrap_text(text, limit=20):
     words = text.split()
     lines = []
     line = ""
+
     for w in words:
         test = (line + " " + w).strip()
+
         if len(test) <= limit:
             line = test
         else:
             if line:
                 lines.append(line)
             line = w
+
     if line:
         lines.append(line)
+
     return lines
 
-def choose_content(lang, ctype):
+
+def scan_gallery(path):
+    try:
+        from jnius import autoclass
+
+        MediaScannerConnection = autoclass(
+            "android.media.MediaScannerConnection"
+        )
+        PythonActivity = autoclass(
+            "org.kivy.android.PythonActivity"
+        )
+
+        MediaScannerConnection.scanFile(
+            PythonActivity.mActivity,
+            [path],
+            ["image/jpeg"],
+            None
+        )
+    except:
+        pass
+
+
+def get_random_content(lang, ctype):
     if lang == "ar":
-        data = {
-            "ayah": ("آية اليوم", AYAT_AR, "آية قرآنية"),
-            "hadith": ("حديث اليوم", AHADITH_AR, "حديث شريف"),
-            "dhikr": ("ذكر اليوم", AZKAR_AR, "ذكر"),
-            "dua": ("دعاء اليوم", DOAA_AR, "دعاء"),
+        source = {
+            "ayah": ("آية اليوم", random.choice(AYAT_AR), "آية قرآنية"),
+            "hadith": ("حديث اليوم", random.choice(AHADITH_AR), "حديث شريف"),
+            "dhikr": ("ذكر اليوم", random.choice(AZKAR_AR), "ذكر"),
+            "dua": ("دعاء اليوم", random.choice(DOAA_AR), "دعاء")
         }
     else:
-        data = {
-            "ayah": ("Daily Verse", AYAT_EN, "Quranic verse"),
-            "hadith": ("Daily Hadith", AHADITH_EN, "Hadith"),
-            "dhikr": ("Daily Dhikr", AZKAR_EN, "Dhikr"),
-            "dua": ("Daily Dua", DOAA_EN, "Dua"),
+        source = {
+            "ayah": ("Daily Verse", random.choice(AYAT_EN), "Quran"),
+            "hadith": ("Daily Hadith", random.choice(AHADITH_EN), "Hadith"),
+            "dhikr": ("Daily Dhikr", random.choice(AZKAR_EN), "Dhikr"),
+            "dua": ("Daily Dua", random.choice(DOAA_EN), "Dua")
         }
 
     if ctype == "random":
         ctype = random.choice(["ayah", "hadith", "dhikr", "dua"])
 
-    title, arr, ref = data[ctype]
-    return title, random.choice(arr), ref
+    return source[ctype]
 
-def theme_colors(design):
-    if design == 1:
-        return (4,20,14), (15,15,15), (212,170,80), (245,245,240)
-    if design == 2:
-        return (238,227,206), (252,246,232), (150,105,45), (25,55,35)
-    return (5,6,7), (18,18,18), (225,178,70), (245,245,245)
 
-def make_image(path, lang="ar", ctype="random", design=1):
+# ==========================
+# IMAGE MAKER
+# ==========================
+
+def make_status(path, lang="ar", ctype="random"):
     w, h = 1080, 1920
-    bg, card, gold, white = theme_colors(design)
 
-    img = PILImage.new("RGB", (w, h), bg)
+    img = PILImage.new("RGB", (w, h), (0, 20, 12))
     draw = ImageDraw.Draw(img)
 
+    gold = (210, 170, 80)
+    white = (245, 245, 245)
+    dark = (15, 15, 15)
+
     title_font = get_font(58)
-    mid = get_font(48)
-    small = get_font(34)
-    tiny = get_font(28)
+    big_font = get_font(48)
+    med_font = get_font(34)
+    small_font = get_font(28)
 
-    app_title = APP_TITLE_AR if lang == "ar" else APP_TITLE_EN
-    subtitle = "تصميم يومي متجدد" if lang == "ar" else "Daily Islamic Status"
-    footer = "اللهم اجعلها صدقة جارية" if lang == "ar" else "May it be ongoing charity"
+    draw.rounded_rectangle((40, 40, 1040, 1880), radius=45, outline=gold, width=4)
+    draw.rounded_rectangle((80, 90, 1000, 340), radius=25, outline=gold, width=3)
 
-    kind, text, ref = choose_content(lang, ctype)
+    title = APP_TITLE_AR if lang == "ar" else APP_TITLE_EN
+    sub = "تصميم يومي متجدد" if lang == "ar" else "Daily New Design"
 
-    draw.rounded_rectangle((40, 40, w-40, h-40), radius=45, outline=gold, width=4)
-    draw.rounded_rectangle((80, 90, w-80, 350), radius=30, outline=gold, width=3)
+    draw_center(draw, 540, 155, title, title_font, gold, lang)
+    draw_center(draw, 540, 235, sub, med_font, white, lang)
+    draw_center(draw, 540, 300, date_text(lang), small_font, gold, lang, plain=True)
 
-    draw_text(draw, w/2, 150, app_title, title_font, gold, lang)
-    draw_text(draw, w/2, 235, subtitle, small, white, lang)
-    draw_text(draw, w/2, 305, date_text(lang), tiny, gold, lang)
+    draw.rounded_rectangle((130, 470, 950, 1180), radius=35, fill=dark, outline=gold, width=3)
 
-    draw.rounded_rectangle((130, 470, w-130, 1180), radius=35, fill=card, outline=gold, width=3)
+    kind, text, ref = get_random_content(lang, ctype)
 
-    draw_text(draw, w/2, 560, kind, mid, gold, lang)
+    draw_center(draw, 540, 560, kind, big_font, gold, lang)
 
-    y = 710
-    limit = 18 if lang == "ar" else 24
+    y = 720
+    limit = 18 if lang == "ar" else 26
+
     for line in wrap_text(text, limit):
-        draw_text(draw, w/2, y, line, mid, white, lang)
-        y += 82
+        draw_center(draw, 540, y, line, big_font, white, lang)
+        y += 80
 
-    draw_text(draw, w/2, 1085, ref, small, gold, lang)
-    draw_text(draw, w/2, 1320, footer, small, white, lang)
+    draw_center(draw, 540, 1080, ref, med_font, gold, lang)
 
-    draw.rounded_rectangle((150, 1450, w-150, 1560), radius=25, outline=gold, width=3)
-    draw_text(draw, w/2, 1505, date_text(lang), small, white, lang)
+    footer = "اللهم اجعلها صدقة جارية" if lang == "ar" else "May it be charity"
+    draw_center(draw, 540, 1320, footer, med_font, white, lang)
+
+    draw.rounded_rectangle((160, 1450, 920, 1560), radius=22, outline=gold, width=3)
+    draw_center(draw, 540, 1505, date_text(lang), med_font, white, lang, plain=True)
 
     img.save(path, quality=95)
 
-class MyApp(App):
+
+# ==========================
+# APP
+# ==========================
+
+class IslamApp(App):
+
     def build(self):
         os.makedirs(SAVE_DIR, exist_ok=True)
+
         self.lang = "ar"
         self.ctype = "random"
-        self.design = 1
-        self.last_path = ""
 
-        root = BoxLayout(orientation="vertical", padding=8, spacing=8)
+        root = BoxLayout(
+            orientation="vertical",
+            spacing=8,
+            padding=8
+        )
 
-        self.preview = Image(size_hint=(1, 0.62), allow_stretch=True, keep_ratio=True)
-        self.msg = Label(text=reshape_ar("جاهز"), size_hint=(1, 0.05), font_size=16)
+        self.preview = Image(
+            size_hint=(1, 0.62),
+            allow_stretch=True,
+            keep_ratio=True
+        )
 
-        lang_row = BoxLayout(size_hint=(1, 0.07), spacing=5)
-        b_ar = Button(text="Arabic", font_size=15)
-        b_en = Button(text="English", font_size=15)
-        b_ar.bind(on_press=lambda x: self.set_lang("ar"))
-        b_en.bind(on_press=lambda x: self.set_lang("en"))
-        lang_row.add_widget(b_ar)
-        lang_row.add_widget(b_en)
+        self.msg = Label(
+            text="Ready",
+            size_hint=(1, 0.05),
+            font_size=18
+        )
 
-        type_row = BoxLayout(size_hint=(1, 0.07), spacing=5)
-        types = [
-            ("Random", "random"),
-            ("Ayah", "ayah"),
-            ("Hadith", "hadith"),
-            ("Dhikr", "dhikr"),
-            ("Dua", "dua"),
-        ]
-        for label, val in types:
-            b = Button(text=label, font_size=13)
-            b.bind(on_press=lambda x, v=val: self.set_type(v))
-            type_row.add_widget(b)
+        # لغة
+        row1 = BoxLayout(size_hint=(1, 0.08), spacing=5)
 
-        design_row = BoxLayout(size_hint=(1, 0.07), spacing=5)
-        for i in [1, 2, 3]:
-            b = Button(text=f"Design {i}", font_size=14)
-            b.bind(on_press=lambda x, d=i: self.set_design(d))
-            design_row.add_widget(b)
+        self.btn_ar = Button(text="العربية")
+        self.btn_en = Button(text="English")
 
-        create_btn = Button(text="Create New Status", size_hint=(1, 0.1), font_size=20)
-        create_btn.bind(on_press=self.generate)
+        self.btn_ar.bind(on_press=lambda x: self.change_lang("ar"))
+        self.btn_en.bind(on_press=lambda x: self.change_lang("en"))
+
+        row1.add_widget(self.btn_ar)
+        row1.add_widget(self.btn_en)
+
+        # نوع
+        row2 = BoxLayout(size_hint=(1, 0.08), spacing=5)
+
+        self.btn_random = Button(text="عشوائي")
+        self.btn_ayah = Button(text="آية")
+        self.btn_hadith = Button(text="حديث")
+        self.btn_dhikr = Button(text="ذكر")
+        self.btn_dua = Button(text="دعاء")
+
+        self.btn_random.bind(on_press=lambda x: self.set_type("random"))
+        self.btn_ayah.bind(on_press=lambda x: self.set_type("ayah"))
+        self.btn_hadith.bind(on_press=lambda x: self.set_type("hadith"))
+        self.btn_dhikr.bind(on_press=lambda x: self.set_type("dhikr"))
+        self.btn_dua.bind(on_press=lambda x: self.set_type("dua"))
+
+        row2.add_widget(self.btn_random)
+        row2.add_widget(self.btn_ayah)
+        row2.add_widget(self.btn_hadith)
+        row2.add_widget(self.btn_dhikr)
+        row2.add_widget(self.btn_dua)
+
+        # زر إنشاء
+        self.btn_create = Button(
+            text="إنشاء حالة جديدة",
+            size_hint=(1, 0.12),
+            font_size=22
+        )
+
+        self.btn_create.bind(on_press=self.generate)
 
         root.add_widget(self.preview)
         root.add_widget(self.msg)
-        root.add_widget(lang_row)
-        root.add_widget(type_row)
-        root.add_widget(design_row)
-        root.add_widget(create_btn)
+        root.add_widget(row1)
+        root.add_widget(row2)
+        root.add_widget(self.btn_create)
 
+        self.refresh_ui()
         self.generate()
+
         return root
 
-    def set_lang(self, lang):
+    def refresh_ui(self):
+        if self.lang == "ar":
+            self.btn_ar.text = "العربية"
+            self.btn_en.text = "English"
+
+            self.btn_random.text = "عشوائي"
+            self.btn_ayah.text = "آية"
+            self.btn_hadith.text = "حديث"
+            self.btn_dhikr.text = "ذكر"
+            self.btn_dua.text = "دعاء"
+
+            self.btn_create.text = "إنشاء حالة جديدة"
+
+        else:
+            self.btn_ar.text = "Arabic"
+            self.btn_en.text = "English"
+
+            self.btn_random.text = "Random"
+            self.btn_ayah.text = "Ayah"
+            self.btn_hadith.text = "Hadith"
+            self.btn_dhikr.text = "Dhikr"
+            self.btn_dua.text = "Dua"
+
+            self.btn_create.text = "Create New Status"
+
+    def change_lang(self, lang):
         self.lang = lang
+        self.refresh_ui()
         self.generate()
 
     def set_type(self, ctype):
         self.ctype = ctype
         self.generate()
 
-    def set_design(self, design):
-        self.design = design
-        self.generate()
-
     def generate(self, *args):
         try:
             now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             path = os.path.join(SAVE_DIR, f"status_{now}.jpg")
-            make_image(path, self.lang, self.ctype, self.design)
-            self.last_path = path
+
+            make_status(path, self.lang, self.ctype)
+
+            scan_gallery(path)
+
             self.preview.source = path
             self.preview.reload()
-            self.msg.text = "Saved in Pictures/IslamStatusPro"
+
+            if self.lang == "ar":
+                self.msg.text = "تم الحفظ داخل المعرض / Pictures/IslamStatusPro"
+            else:
+                self.msg.text = "Saved in Gallery / Pictures/IslamStatusPro"
+
         except Exception as e:
             self.msg.text = str(e)
 
-MyApp().run()
+
+IslamApp().run()
