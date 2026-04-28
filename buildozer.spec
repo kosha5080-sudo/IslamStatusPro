@@ -1,12 +1,12 @@
 [app]
 
-title = Islamic WhatsApp Status
+title = Islamic WhatsApp Status VIP
 package.name = halatwatssislamia
 package.domain = com.islam
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
-version = 1.2
+version = 1.3
 
 requirements = python3,kivy,pillow,arabic-reshaper
 
