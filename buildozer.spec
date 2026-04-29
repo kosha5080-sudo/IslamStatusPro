@@ -1,6 +1,6 @@
 [app]
 
-title = Islamic WhatsApp Status
+title = حالات واتس اب اسلاميه
 package.name = halatwatssislamia
 package.domain = com.islam
 
