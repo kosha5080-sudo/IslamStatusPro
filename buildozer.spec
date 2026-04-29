@@ -9,7 +9,6 @@ source.include_exts = py,png,jpg,kv,ttf
 version = 2.1
 
 requirements = python3,kivy,pillow,arabic-reshaper
-
 orientation = portrait
 fullscreen = 0
 
