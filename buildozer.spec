@@ -6,7 +6,7 @@ package.domain = com.islam
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
-version = 2.0
+version = 2.1
 
 requirements = python3,kivy,pillow,arabic-reshaper
 
@@ -14,6 +14,7 @@ orientation = portrait
 fullscreen = 0
 
 android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
+
 android.api = 30
 android.minapi = 21
 android.sdk = 30
