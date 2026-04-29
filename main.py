@@ -19,27 +19,84 @@ try:
 except:
     arabic_reshaper = None
 
+
 Window.clearcolor = (0, 0, 0, 1)
 
 FONT_FILE = "arabic.ttf"
 SAVE_DIR = "/storage/emulated/0/Pictures/IslamStatusPro"
-TEMP_DIR = "/storage/emulated/0/Android/data/com.islam.halatwatssislamia/files"
 
 
-AYAT_AR = ["ألا بذكر الله تطمئن القلوب", "إن مع العسر يسرا", "ادعوني أستجب لكم"] * 17
-AHADITH_AR = ["الكلمة الطيبة صدقة", "إنما الأعمال بالنيات", "تبسمك في وجه أخيك صدقة"] * 17
-AZKAR_AR = ["سبحان الله وبحمده", "أستغفر الله العظيم", "لا إله إلا الله"] * 17
-DOAA_AR = ["اللهم اغفر لي ولوالدي", "اللهم ارزقني راحة القلب", "اللهم ثبت قلبي على دينك"] * 17
+AYAT_AR = [
+    "ألا بذكر الله تطمئن القلوب",
+    "إن مع العسر يسرا",
+    "ادعوني أستجب لكم",
+    "ومن يتوكل على الله فهو حسبه",
+    "وقل رب زدني علما",
+] * 10
 
-AYAT_EN = ["Indeed, with hardship comes ease.", "Remember Allah often.", "Call upon Me; I will respond."] * 17
-AHADITH_EN = ["A good word is charity.", "Actions are judged by intentions.", "Do not become angry."] * 17
-AZKAR_EN = ["Glory be to Allah.", "All praise is due to Allah.", "I seek forgiveness from Allah."] * 17
-DOAA_EN = ["O Allah guide me.", "O Allah forgive me.", "O Allah grant me peace."] * 17
+AHADITH_AR = [
+    "الكلمة الطيبة صدقة",
+    "إنما الأعمال بالنيات",
+    "تبسمك في وجه أخيك صدقة",
+    "لا تغضب",
+    "يسروا ولا تعسروا",
+] * 10
+
+AZKAR_AR = [
+    "سبحان الله وبحمده",
+    "أستغفر الله العظيم",
+    "لا إله إلا الله",
+    "الحمد لله",
+    "الله أكبر",
+] * 10
+
+DOAA_AR = [
+    "اللهم اغفر لي ولوالدي",
+    "اللهم ارزقني راحة القلب",
+    "اللهم ثبت قلبي على دينك",
+    "اللهم فرج همي ويسر أمري",
+    "اللهم ارزقني حسن الخاتمة",
+] * 10
+
+AYAT_EN = [
+    "Indeed, with hardship comes ease.",
+    "Remember Allah often.",
+    "Call upon Me; I will respond.",
+    "Allah is with the patient.",
+    "Allah loves the doers of good.",
+] * 10
+
+AHADITH_EN = [
+    "A good word is charity.",
+    "Actions are judged by intentions.",
+    "Do not become angry.",
+    "Make things easy.",
+    "Purity is half of faith.",
+] * 10
+
+AZKAR_EN = [
+    "Glory be to Allah.",
+    "All praise is due to Allah.",
+    "I seek forgiveness from Allah.",
+    "Allah is the Greatest.",
+    "There is no god but Allah.",
+] * 10
+
+DOAA_EN = [
+    "O Allah guide me.",
+    "O Allah forgive me.",
+    "O Allah grant me peace.",
+    "O Allah bless my day.",
+    "O Allah accept my prayer.",
+] * 10
 
 
 def ar(text):
     if arabic_reshaper:
-        return arabic_reshaper.reshape(text)[::-1]
+        try:
+            return arabic_reshaper.reshape(text)[::-1]
+        except:
+            return text[::-1]
     return text[::-1]
 
 
@@ -55,10 +112,19 @@ def get_font(size):
 
 def date_text(lang):
     today = datetime.date.today()
+
     if lang == "ar":
-        months = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"]
-        days = ["الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت","الأحد"]
-        return f"{today.year} {ar(months[today.month-1])} {today.day} - {ar(days[today.weekday()])}"
+        months = [
+            "يناير", "فبراير", "مارس", "أبريل", "مايو", "يونيو",
+            "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"
+        ]
+        days = [
+            "الإثنين", "الثلاثاء", "الأربعاء", "الخميس",
+            "الجمعة", "السبت", "الأحد"
+        ]
+
+        return f"{today.year} {ar(months[today.month - 1])} {today.day} - {ar(days[today.weekday()])}"
+
     return today.strftime("%A - %d %B %Y")
 
 
@@ -70,7 +136,9 @@ def draw_text(draw, x, y, text, font, color, lang="ar", plain=False):
 
 def wrap_text(text, limit=20):
     words = text.split()
-    lines, line = [], ""
+    lines = []
+    line = ""
+
     for w in words:
         test = (line + " " + w).strip()
         if len(test) <= limit:
@@ -79,8 +147,10 @@ def wrap_text(text, limit=20):
             if line:
                 lines.append(line)
             line = w
+
     if line:
         lines.append(line)
+
     return lines
 
 
@@ -109,14 +179,28 @@ def get_content(lang, ctype):
 def scan_gallery(path):
     try:
         from jnius import autoclass
+
         MediaScannerConnection = autoclass("android.media.MediaScannerConnection")
         PythonActivity = autoclass("org.kivy.android.PythonActivity")
+
         MediaScannerConnection.scanFile(
             PythonActivity.mActivity,
             [path],
             ["image/jpeg"],
             None
         )
+    except:
+        pass
+
+
+def request_android_permissions():
+    try:
+        from android.permissions import request_permissions, Permission
+
+        request_permissions([
+            Permission.READ_EXTERNAL_STORAGE,
+            Permission.WRITE_EXTERNAL_STORAGE,
+        ])
     except:
         pass
 
@@ -171,27 +255,42 @@ def make_status(path, lang="ar", ctype="random"):
 
 class IslamApp(App):
     def build(self):
-        os.makedirs(TEMP_DIR, exist_ok=True)
-        os.makedirs(SAVE_DIR, exist_ok=True)
+        request_android_permissions()
 
         self.lang = "ar"
         self.ctype = "random"
-        self.temp_path = os.path.join(TEMP_DIR, "preview_status.jpg")
+
+        self.temp_dir = self.user_data_dir
+        os.makedirs(self.temp_dir, exist_ok=True)
+
+        self.temp_path = os.path.join(self.temp_dir, "preview_status.jpg")
 
         root = BoxLayout(orientation="vertical", spacing=8, padding=8)
 
-        self.preview = Image(size_hint=(1, 0.58), allow_stretch=True, keep_ratio=True)
-        self.msg = Label(text="جاهز", size_hint=(1, 0.05), font_size=16)
+        self.preview = Image(
+            size_hint=(1, 0.58),
+            allow_stretch=True,
+            keep_ratio=True
+        )
+
+        self.msg = Label(
+            text="جاهز",
+            size_hint=(1, 0.05),
+            font_size=16
+        )
 
         row1 = BoxLayout(size_hint=(1, 0.08), spacing=5)
         self.btn_ar = Button(text="العربية")
         self.btn_en = Button(text="English")
+
         self.btn_ar.bind(on_press=lambda x: self.change_lang("ar"))
         self.btn_en.bind(on_press=lambda x: self.change_lang("en"))
+
         row1.add_widget(self.btn_ar)
         row1.add_widget(self.btn_en)
 
         row2 = BoxLayout(size_hint=(1, 0.08), spacing=5)
+
         self.btn_random = Button(text="عشوائي")
         self.btn_ayah = Button(text="آية")
         self.btn_hadith = Button(text="حديث")
@@ -204,11 +303,23 @@ class IslamApp(App):
         self.btn_dhikr.bind(on_press=lambda x: self.set_type("dhikr"))
         self.btn_dua.bind(on_press=lambda x: self.set_type("dua"))
 
-        for b in [self.btn_random, self.btn_ayah, self.btn_hadith, self.btn_dhikr, self.btn_dua]:
-            row2.add_widget(b)
+        row2.add_widget(self.btn_random)
+        row2.add_widget(self.btn_ayah)
+        row2.add_widget(self.btn_hadith)
+        row2.add_widget(self.btn_dhikr)
+        row2.add_widget(self.btn_dua)
 
-        self.btn_create = Button(text="إنشاء حالة جديدة", size_hint=(1, 0.1), font_size=20)
-        self.btn_save = Button(text="حفظ في المعرض", size_hint=(1, 0.1), font_size=20)
+        self.btn_create = Button(
+            text="إنشاء حالة جديدة",
+            size_hint=(1, 0.1),
+            font_size=20
+        )
+
+        self.btn_save = Button(
+            text="حفظ في المعرض",
+            size_hint=(1, 0.1),
+            font_size=20
+        )
 
         self.btn_create.bind(on_press=self.generate)
         self.btn_save.bind(on_press=self.save_to_gallery)
@@ -222,27 +333,33 @@ class IslamApp(App):
 
         self.refresh_ui()
         self.generate()
+
         return root
 
     def refresh_ui(self):
         if self.lang == "ar":
             self.btn_ar.text = "العربية"
             self.btn_en.text = "English"
+
             self.btn_random.text = "عشوائي"
             self.btn_ayah.text = "آية"
             self.btn_hadith.text = "حديث"
             self.btn_dhikr.text = "ذكر"
             self.btn_dua.text = "دعاء"
+
             self.btn_create.text = "إنشاء حالة جديدة"
             self.btn_save.text = "حفظ في المعرض"
+
         else:
             self.btn_ar.text = "Arabic"
             self.btn_en.text = "English"
+
             self.btn_random.text = "Random"
             self.btn_ayah.text = "Ayah"
             self.btn_hadith.text = "Hadith"
             self.btn_dhikr.text = "Dhikr"
             self.btn_dua.text = "Dua"
+
             self.btn_create.text = "Create New Status"
             self.btn_save.text = "Save to Gallery"
 
@@ -258,20 +375,28 @@ class IslamApp(App):
     def generate(self, *args):
         try:
             make_status(self.temp_path, self.lang, self.ctype)
+
+            self.preview.source = ""
             self.preview.source = self.temp_path
             self.preview.reload()
+
             self.msg.text = "تم إنشاء الصورة" if self.lang == "ar" else "Image created"
+
         except Exception as e:
-            self.msg.text = str(e)
+            self.msg.text = "Error: " + str(e)
 
     def save_to_gallery(self, *args):
         try:
             os.makedirs(SAVE_DIR, exist_ok=True)
+
             now = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
             final_path = os.path.join(SAVE_DIR, f"islamic_status_{now}.jpg")
+
             shutil.copy2(self.temp_path, final_path)
             scan_gallery(final_path)
+
             self.msg.text = "تم الحفظ في المعرض" if self.lang == "ar" else "Saved to Gallery"
+
         except Exception as e:
             self.msg.text = "Save Error: " + str(e)
 
