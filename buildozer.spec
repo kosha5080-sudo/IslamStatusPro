@@ -5,10 +5,11 @@ package.name = halatwatssislamia
 package.domain = com.islam
 
 source.dir = .
-source.include_exts = py,png,jpg,kv,ttf,presplash
-version = 3.0
+source.include_exts = py,png,jpg,kv,ttf
+version = 4.0
 
 requirements = python3,kivy,pillow,arabic-reshaper
+
 orientation = portrait
 fullscreen = 0
 
