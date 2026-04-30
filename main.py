@@ -1,12 +1,11 @@
 # =========================
-# حالات واتس اب اسلاميه - Store Edition
+# حالات واتس اب اسلاميه - نسخة احتراف
 # =========================
 
 import os
 import random
 import datetime
 import shutil
-import json
 
 from kivy.app import App
 from kivy.core.window import Window
@@ -22,8 +21,6 @@ from content import AYAT_AR, AHADITH_AR, AZKAR_AR, DOAA_AR
 Window.clearcolor = (0.02, 0.02, 0.02, 1)
 
 SAVE_DIR = "/storage/emulated/0/Pictures/IslamStatusPro"
-SETTINGS_FILE = "settings.json"
-
 FONT_FILE = "arabic.ttf"
 
 
@@ -66,7 +63,7 @@ def draw_text(draw, x, y, text, font, color):
 
 
 # =========================
-# اختيار نص بدون تكرار
+# منع التكرار
 # =========================
 
 def get_random(data, last):
@@ -89,7 +86,7 @@ def theme(design):
 
 
 # =========================
-# إنشاء صورة
+# إنشاء الصورة
 # =========================
 
 def make_status(path, text, design):
@@ -115,6 +112,33 @@ def make_status(path, text, design):
 
 
 # =========================
+# مشاركة واتساب
+# =========================
+
+def share_image(path):
+    try:
+        from jnius import autoclass
+        Intent = autoclass('android.content.Intent')
+        PythonActivity = autoclass('org.kivy.android.PythonActivity')
+        Uri = autoclass('android.net.Uri')
+        File = autoclass('java.io.File')
+
+        intent = Intent(Intent.ACTION_SEND)
+        intent.setType("image/*")
+
+        file = File(path)
+        uri = Uri.fromFile(file)
+
+        intent.putExtra(Intent.EXTRA_STREAM, uri)
+
+        currentActivity = PythonActivity.mActivity
+        currentActivity.startActivity(Intent.createChooser(intent, "مشاركة"))
+
+    except:
+        pass
+
+
+# =========================
 # التطبيق
 # =========================
 
@@ -124,6 +148,7 @@ class IslamApp(App):
 
         self.design = 1
         self.last_text = ""
+        self.type = "random"
 
         self.temp = "preview.jpg"
 
@@ -131,26 +156,32 @@ class IslamApp(App):
 
         self.img = Image()
 
-        # النوع
+        # اختيار النوع
         row_type = BoxLayout(size_hint=(1,0.1))
 
-        self.type = "random"
+        types = [
+            ("عشوائي","random"),
+            ("آية","ayah"),
+            ("حديث","hadith"),
+            ("ذكر","dhikr"),
+            ("دعاء","dua")
+        ]
 
-        for name in ["random","ayah","hadith","dhikr","dua"]:
+        for name, val in types:
             btn = Button(text=name)
-            btn.bind(on_press=lambda x, n=name: self.set_type(n))
+            btn.bind(on_press=lambda x, v=val: self.set_type(v))
             row_type.add_widget(btn)
 
         # التصميم
         row_design = BoxLayout(size_hint=(1,0.1))
 
         for i in [1,2,3]:
-            btn = Button(text=f"Design {i}")
+            btn = Button(text=f"تصميم {i}")
             btn.bind(on_press=lambda x, d=i: self.set_design(d))
             row_design.add_widget(btn)
 
-        self.btn_generate = Button(text="Generate")
-        self.btn_save = Button(text="Save")
+        self.btn_generate = Button(text="إنشاء حالة")
+        self.btn_save = Button(text="حفظ ومشاركة")
 
         self.btn_generate.bind(on_press=self.generate)
         self.btn_save.bind(on_press=self.save)
@@ -207,6 +238,9 @@ class IslamApp(App):
         )
 
         shutil.copy(self.temp, path)
+
+        # مشاركة
+        share_image(path)
 
 
 IslamApp().run()
