@@ -6,12 +6,16 @@ package.domain = com.islam
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
-version = 4.0
+version = 4.1
 
 requirements = python3,kivy,pillow,arabic-reshaper
 
 orientation = portrait
 fullscreen = 0
+
+icon.filename = icon.png
+android.adaptive_icon_foreground = icon_fg.png
+android.adaptive_icon_background = icon_bg.png
 
 android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
 
