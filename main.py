@@ -1,7 +1,3 @@
-# =========================
-# حالات واتس اب اسلاميه - نسخة احتراف
-# =========================
-
 import os
 import random
 import datetime
@@ -9,47 +5,67 @@ import shutil
 
 from kivy.app import App
 from kivy.core.window import Window
+from kivy.core.text import LabelBase
+from kivy.resources import resource_find
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.image import Image
+from kivy.uix.label import Label
 
 from PIL import Image as PILImage
 from PIL import ImageDraw, ImageFont
 
+import arabic_reshaper
+from bidi.algorithm import get_display
+
 from content import AYAT_AR, AHADITH_AR, AZKAR_AR, DOAA_AR
 
-Window.clearcolor = (0.02, 0.02, 0.02, 1)
+Window.clearcolor = (0, 0, 0, 1)
 
 SAVE_DIR = "/storage/emulated/0/Pictures/IslamStatusPro"
 FONT_FILE = "arabic.ttf"
 
+FONT_PATH = resource_find(FONT_FILE) or FONT_FILE
 
-# =========================
-# أدوات
-# =========================
+try:
+    LabelBase.register(name="ArabicFont", fn_regular=FONT_PATH)
+except:
+    pass
+
+
+def fix_ar(text):
+    try:
+        return get_display(arabic_reshaper.reshape(text))
+    except:
+        return text
+
 
 def get_font(size):
     try:
-        return ImageFont.truetype(FONT_FILE, size)
+        return ImageFont.truetype(FONT_PATH, size)
     except:
         return ImageFont.load_default()
 
 
 def date_text():
     today = datetime.date.today()
-    return f"{today.day}-{today.month}-{today.year}"
+    months = ["يناير","فبراير","مارس","أبريل","مايو","يونيو","يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"]
+    days = ["الإثنين","الثلاثاء","الأربعاء","الخميس","الجمعة","السبت","الأحد"]
+    return f"{days[today.weekday()]} - {today.day} {months[today.month-1]} {today.year}"
 
 
-def wrap_text(text, limit=18):
+def wrap_text(text, limit=22):
     words = text.split()
     lines = []
     line = ""
 
     for w in words:
-        if len(line + " " + w) <= limit:
-            line += " " + w
+        test = (line + " " + w).strip()
+        if len(test) <= limit:
+            line = test
         else:
-            lines.append(line.strip())
+            if line:
+                lines.append(line)
             line = w
 
     if line:
@@ -58,70 +74,73 @@ def wrap_text(text, limit=18):
     return lines
 
 
-def draw_text(draw, x, y, text, font, color):
-    draw.text((x, y), text, fill=color, font=font, anchor="mm")
+def draw_ar(draw, x, y, text, font, color):
+    draw.text((x, y), fix_ar(text), fill=color, font=font, anchor="mm")
 
-
-# =========================
-# منع التكرار
-# =========================
 
 def get_random(data, last):
     choice = random.choice(data)
-    while choice == last:
+    while choice == last and len(data) > 1:
         choice = random.choice(data)
     return choice
 
 
-# =========================
-# تصميمات
-# =========================
-
 def theme(design):
     if design == 1:
-        return (0,22,13), (210,170,80), (255,255,255)
+        return (0, 22, 13), (16, 16, 16), (210, 170, 80), (245, 245, 245)
     if design == 2:
-        return (10,10,10), (230,185,75), (240,240,240)
-    return (242,238,228), (145,105,45), (20,20,20)
+        return (5, 5, 5), (22, 22, 22), (230, 185, 75), (245, 245, 245)
+    return (242, 238, 228), (255, 255, 255), (145, 105, 45), (25, 25, 25)
 
 
-# =========================
-# إنشاء الصورة
-# =========================
+def make_status(path, text, design, kind):
 
-def make_status(path, text, design):
-
-    bg, gold, white = theme(design)
+    bg, card, gold, white = theme(design)
 
     img = PILImage.new("RGB", (1080, 1920), bg)
     draw = ImageDraw.Draw(img)
 
     title_font = get_font(60)
-    text_font = get_font(48)
+    sub_font = get_font(32)
+    kind_font = get_font(46)
+    text_font = get_font(46)
+    small_font = get_font(28)
 
-    draw_text(draw, 540, 200, "حالات واتس اب اسلاميه", title_font, gold)
+    # إطار خارجي
+    draw.rounded_rectangle((45, 45, 1035, 1875), radius=48, outline=gold, width=5)
 
-    y = 700
-    for line in wrap_text(text):
-        draw_text(draw, 540, y, line, text_font, white)
-        y += 80
+    # هيدر
+    draw.rounded_rectangle((95, 100, 985, 340), radius=30, outline=gold, width=3)
+    draw_ar(draw, 540, 165, "حالات واتس اب اسلاميه", title_font, gold)
+    draw_ar(draw, 540, 235, "تصميم يومي متجدد", sub_font, white)
+    draw_ar(draw, 540, 295, date_text(), small_font, gold)
 
-    draw_text(draw, 540, 1600, date_text(), get_font(28), gold)
+    # كارت النص
+    draw.rounded_rectangle((120, 470, 960, 1180), radius=42, fill=card, outline=gold, width=3)
+    draw_ar(draw, 540, 565, kind, kind_font, gold)
 
-    img.save(path)
+    y = 720
+    for line in wrap_text(text, 24):
+        draw_ar(draw, 540, y, line, text_font, white)
+        y += 78
 
+    # دعاء أسفل
+    draw_ar(draw, 540, 1325, "اللهم اجعلها صدقة جارية", sub_font, white)
 
-# =========================
-# مشاركة واتساب
-# =========================
+    # تاريخ أسفل
+    draw.rounded_rectangle((170, 1450, 910, 1565), radius=25, outline=gold, width=3)
+    draw_ar(draw, 540, 1508, date_text(), small_font, white)
+
+    img.save(path, quality=95)
+
 
 def share_image(path):
     try:
         from jnius import autoclass
-        Intent = autoclass('android.content.Intent')
-        PythonActivity = autoclass('org.kivy.android.PythonActivity')
-        Uri = autoclass('android.net.Uri')
-        File = autoclass('java.io.File')
+        Intent = autoclass("android.content.Intent")
+        PythonActivity = autoclass("org.kivy.android.PythonActivity")
+        Uri = autoclass("android.net.Uri")
+        File = autoclass("java.io.File")
 
         intent = Intent(Intent.ACTION_SEND)
         intent.setType("image/*")
@@ -132,15 +151,10 @@ def share_image(path):
         intent.putExtra(Intent.EXTRA_STREAM, uri)
 
         currentActivity = PythonActivity.mActivity
-        currentActivity.startActivity(Intent.createChooser(intent, "مشاركة"))
-
+        currentActivity.startActivity(Intent.createChooser(intent, fix_ar("مشاركة")))
     except:
         pass
 
-
-# =========================
-# التطبيق
-# =========================
 
 class IslamApp(App):
 
@@ -149,44 +163,59 @@ class IslamApp(App):
         self.design = 1
         self.last_text = ""
         self.type = "random"
+        self.temp = os.path.join(self.user_data_dir, "preview.jpg")
 
-        self.temp = "preview.jpg"
+        root = BoxLayout(orientation="vertical", padding=8, spacing=8)
 
-        root = BoxLayout(orientation="vertical", padding=10, spacing=10)
+        self.img = Image(size_hint=(1, 0.55), allow_stretch=True, keep_ratio=True)
 
-        self.img = Image()
+        self.msg = Label(
+            text=fix_ar("جاهز"),
+            size_hint=(1, 0.05),
+            font_name="ArabicFont"
+        )
 
-        # اختيار النوع
-        row_type = BoxLayout(size_hint=(1,0.1))
+        row_type = BoxLayout(size_hint=(1, 0.08), spacing=4)
 
         types = [
-            ("عشوائي","random"),
-            ("آية","ayah"),
-            ("حديث","hadith"),
-            ("ذكر","dhikr"),
-            ("دعاء","dua")
+            ("عشوائي", "random"),
+            ("آية", "ayah"),
+            ("حديث", "hadith"),
+            ("ذكر", "dhikr"),
+            ("دعاء", "dua")
         ]
 
         for name, val in types:
-            btn = Button(text=name)
+            btn = Button(text=fix_ar(name), font_name="ArabicFont")
             btn.bind(on_press=lambda x, v=val: self.set_type(v))
             row_type.add_widget(btn)
 
-        # التصميم
-        row_design = BoxLayout(size_hint=(1,0.1))
+        row_design = BoxLayout(size_hint=(1, 0.08), spacing=4)
 
-        for i in [1,2,3]:
-            btn = Button(text=f"تصميم {i}")
+        for i in [1, 2, 3]:
+            btn = Button(text=fix_ar(f"تصميم {i}"), font_name="ArabicFont")
             btn.bind(on_press=lambda x, d=i: self.set_design(d))
             row_design.add_widget(btn)
 
-        self.btn_generate = Button(text="إنشاء حالة")
-        self.btn_save = Button(text="حفظ ومشاركة")
+        self.btn_generate = Button(
+            text=fix_ar("إنشاء حالة جديدة"),
+            size_hint=(1, 0.1),
+            font_name="ArabicFont",
+            font_size=20
+        )
+
+        self.btn_save = Button(
+            text=fix_ar("حفظ ومشاركة"),
+            size_hint=(1, 0.1),
+            font_name="ArabicFont",
+            font_size=20
+        )
 
         self.btn_generate.bind(on_press=self.generate)
         self.btn_save.bind(on_press=self.save)
 
         root.add_widget(self.img)
+        root.add_widget(self.msg)
         root.add_widget(row_type)
         root.add_widget(row_design)
         root.add_widget(self.btn_generate)
@@ -205,31 +234,31 @@ class IslamApp(App):
         self.generate()
 
     def pick_text(self):
-
         if self.type == "ayah":
-            return get_random(AYAT_AR, self.last_text)
+            return get_random(AYAT_AR, self.last_text), "آية اليوم"
         if self.type == "hadith":
-            return get_random(AHADITH_AR, self.last_text)
+            return get_random(AHADITH_AR, self.last_text), "حديث اليوم"
         if self.type == "dhikr":
-            return get_random(AZKAR_AR, self.last_text)
+            return get_random(AZKAR_AR, self.last_text), "ذكر اليوم"
         if self.type == "dua":
-            return get_random(DOAA_AR, self.last_text)
+            return get_random(DOAA_AR, self.last_text), "دعاء اليوم"
 
         all_data = AYAT_AR + AHADITH_AR + AZKAR_AR + DOAA_AR
-        return get_random(all_data, self.last_text)
+        return get_random(all_data, self.last_text), "نفحة إيمانية"
 
     def generate(self, *args):
-
-        text = self.pick_text()
+        text, kind = self.pick_text()
         self.last_text = text
 
-        make_status(self.temp, text, self.design)
+        make_status(self.temp, text, self.design, kind)
 
+        self.img.source = ""
         self.img.source = self.temp
         self.img.reload()
 
-    def save(self, *args):
+        self.msg.text = fix_ar("تم إنشاء الصورة")
 
+    def save(self, *args):
         os.makedirs(SAVE_DIR, exist_ok=True)
 
         path = os.path.join(
@@ -238,8 +267,7 @@ class IslamApp(App):
         )
 
         shutil.copy(self.temp, path)
-
-        # مشاركة
+        self.msg.text = fix_ar("تم الحفظ في المعرض")
         share_image(path)
 
 
