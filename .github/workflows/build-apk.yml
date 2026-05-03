@@ -5,46 +5,24 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04   # 👈 مهم جدًا (يحل المشكلة)
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libtinfo5
 
       - name: Build Release APK
         uses: digreatbrian/buildozer-action@v2
         with:
           buildozer-cmd: buildozer android release
 
-      - name: Sign APK
-        run: |
-          UNSIGNED_APK=$(ls bin/*release-unsigned.apk | head -n 1)
-
-          BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | sort -V | tail -n 1)
-
-          "$BUILD_TOOLS/zipalign" -f 4 "$UNSIGNED_APK" app-aligned.apk
-
-          keytool -genkeypair \
-            -v \
-            -keystore release.keystore \
-            -alias islamstatus \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass android \
-            -keypass android \
-            -dname "CN=Islam Status,O=Islam,C=KW"
-
-          "$BUILD_TOOLS/apksigner" sign \
-            --ks release.keystore \
-            --ks-key-alias islamstatus \
-            --ks-pass pass:android \
-            --key-pass pass:android \
-            --out bin/IslamStatusPro-release-signed.apk \
-            app-aligned.apk
-
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: IslamStatusPro-release-signed
-          path: bin/IslamStatusPro-release-signed.apk
+          name: IslamStatusPro-release
+          path: bin/*.apk
