@@ -18,8 +18,8 @@ android.adaptive_icon_background = icon_bg.png
 
 android.permissions = READ_EXTERNAL_STORAGE,WRITE_EXTERNAL_STORAGE
 
-android.api = 33
-android.minapi = 23
+android.api = 30
+android.minapi = 21
 android.ndk = 25b
 android.accept_sdk_license = True
 
