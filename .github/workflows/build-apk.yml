@@ -1,26 +1,26 @@
-name: Build Release APK
+name: Build APK
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fix libtinfo
+      - name: Fix libtinfo5
         run: |
           sudo apt-get update
-          sudo apt-get install -y libtinfo6
+          sudo apt-get install -y libtinfo5
 
-      - name: Build
+      - name: Build APK
         uses: digreatbrian/buildozer-action@v2
         with:
-          buildozer-cmd: buildozer android release
+          buildozer-cmd: buildozer android debug
 
-      - name: Upload
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: APK
