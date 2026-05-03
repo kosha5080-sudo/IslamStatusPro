@@ -5,15 +5,11 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Fix libtinfo5
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libtinfo5
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Build APK
         uses: digreatbrian/buildozer-action@v2
