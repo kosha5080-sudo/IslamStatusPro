@@ -15,39 +15,36 @@ from kivy.uix.label import Label
 from PIL import Image as PILImage
 from PIL import ImageDraw, ImageFont
 
-# 🔥 عربي
 try:
     import arabic_reshaper
-    from bidi.algorithm import get_display
-
-    def fix_ar(text):
-        return get_display(arabic_reshaper.reshape(str(text)))
 except:
-    # fallback لو المكتبات مش موجودة
-    def fix_ar(text):
-        return str(text)
-
+    arabic_reshaper = None
 
 from content import AYAT_AR, AHADITH_AR, AZKAR_AR, DOAA_AR
 
 
 Window.clearcolor = (0, 0, 0, 1)
 
-# 🔥 مسار آمن
 SAVE_DIR = "/sdcard/Pictures/IslamStatusPro"
-
 FONT_FILE = "arabic.ttf"
 FONT_PATH = resource_find(FONT_FILE) or FONT_FILE
 
 try:
     LabelBase.register(name="ArabicFont", fn_regular=FONT_PATH)
+    APP_FONT = "ArabicFont"
 except:
-    pass
+    APP_FONT = None
 
 
-# =========================
-# أدوات
-# =========================
+def fix_ar(text):
+    text = str(text)
+    try:
+        if arabic_reshaper:
+            return arabic_reshaper.reshape(text)[::-1]
+        return text[::-1]
+    except:
+        return text
+
 
 def get_font(size):
     try:
@@ -58,18 +55,10 @@ def get_font(size):
 
 def arabic_date_text():
     today = datetime.date.today()
-    months = [
-        "يناير","فبراير","مارس","أبريل","مايو","يونيو",
-        "يوليو","أغسطس","سبتمبر","أكتوبر","نوفمبر","ديسمبر"
-    ]
-    days = [
-        "الإثنين","الثلاثاء","الأربعاء",
-        "الخميس","الجمعة","السبت","الأحد"
-    ]
-    return f"{days[today.weekday()]} - {today.day} {months[today.month-1]} {today.year}"
+    return f"{today.day}-{today.month}-{today.year}"
 
 
-def wrap_text(text, limit=22):
+def wrap_text(text, limit=23):
     words = str(text).split()
     lines = []
     line = ""
@@ -94,29 +83,27 @@ def draw_ar(draw, x, y, text, font, color):
 
 
 def get_random(data, last):
+    if not data:
+        return ""
     choice = random.choice(data)
     while choice == last and len(data) > 1:
         choice = random.choice(data)
     return choice
 
 
-# =========================
-# تصميم
-# =========================
-
 def theme(design):
     if design == 1:
-        return (0,22,13),(17,17,17),(210,170,80),(245,245,245)
+        return (0, 22, 13), (17, 17, 17), (210, 170, 80), (245, 245, 245)
     elif design == 2:
-        return (7,7,7),(22,22,22),(230,185,75),(245,245,245)
+        return (7, 7, 7), (22, 22, 22), (230, 185, 75), (245, 245, 245)
     else:
-        return (242,238,228),(255,255,255),(145,105,45),(25,25,25)
+        return (242, 238, 228), (255, 255, 255), (145, 105, 45), (25, 25, 25)
 
 
 def make_status(path, text, design, kind):
     bg, card, gold, white = theme(design)
 
-    img = PILImage.new("RGB",(1080,1920),bg)
+    img = PILImage.new("RGB", (1080, 1920), bg)
     draw = ImageDraw.Draw(img)
 
     title_font = get_font(60)
@@ -125,36 +112,28 @@ def make_status(path, text, design, kind):
     text_font = get_font(48)
     small_font = get_font(30)
 
-    # إطار
-    draw.rounded_rectangle((45,45,1035,1875),50,outline=gold,width=5)
+    draw.rounded_rectangle((45, 45, 1035, 1875), radius=50, outline=gold, width=5)
 
-    # هيدر
-    draw.rounded_rectangle((95,100,985,350),30,outline=gold,width=3)
-    draw_ar(draw,540,160,"حالات واتس اسلامية",title_font,gold)
-    draw_ar(draw,540,230,"تصميم يومي متجدد",sub_font,white)
-    draw_ar(draw,540,290,arabic_date_text(),small_font,gold)
+    draw.rounded_rectangle((95, 100, 985, 350), radius=32, outline=gold, width=3)
+    draw_ar(draw, 540, 165, "حالات واتس اب اسلامية", title_font, gold)
+    draw_ar(draw, 540, 240, "تصميم يومي متجدد", sub_font, white)
+    draw_ar(draw, 540, 300, arabic_date_text(), small_font, gold)
 
-    # كارت
-    draw.rounded_rectangle((120,470,960,1190),40,fill=card,outline=gold,width=3)
-    draw_ar(draw,540,560,kind,kind_font,gold)
+    draw.rounded_rectangle((120, 470, 960, 1190), radius=42, fill=card, outline=gold, width=3)
+    draw_ar(draw, 540, 565, kind, kind_font, gold)
 
-    y = 720
-    for line in wrap_text(text,24):
-        draw_ar(draw,540,y,line,text_font,white)
+    y = 715
+    for line in wrap_text(text, 24):
+        draw_ar(draw, 540, y, line, text_font, white)
         y += 80
 
-    draw_ar(draw,540,1320,"اللهم اجعلها صدقة جارية",sub_font,white)
+    draw_ar(draw, 540, 1335, "اللهم اجعلها صدقة جارية", sub_font, white)
 
-    # تاريخ
-    draw.rounded_rectangle((170,1450,910,1565),25,outline=gold,width=3)
-    draw_ar(draw,540,1508,arabic_date_text(),small_font,white)
+    draw.rounded_rectangle((170, 1450, 910, 1565), radius=25, outline=gold, width=3)
+    draw_ar(draw, 540, 1508, arabic_date_text(), small_font, white)
 
-    img.save(path,quality=95)
+    img.save(path, quality=95)
 
-
-# =========================
-# مشاركة
-# =========================
 
 def share_image(path):
     try:
@@ -173,14 +152,9 @@ def share_image(path):
 
         currentActivity = PythonActivity.mActivity
         currentActivity.startActivity(Intent.createChooser(intent, fix_ar("مشاركة")))
-
     except:
         pass
 
-
-# =========================
-# التطبيق
-# =========================
 
 class IslamApp(App):
 
@@ -192,88 +166,129 @@ class IslamApp(App):
 
         root = BoxLayout(orientation="vertical", padding=8, spacing=8)
 
-        self.img = Image(size_hint=(1,0.55))
-        self.msg = Label(text=fix_ar("جاهز"), size_hint=(1,0.05), font_name="ArabicFont")
+        self.img = Image(
+            size_hint=(1, 0.55),
+            allow_stretch=True,
+            keep_ratio=True
+        )
 
-        # أنواع
-        row_type = BoxLayout(size_hint=(1,0.08))
+        self.msg = Label(
+            text=fix_ar("جاهز"),
+            size_hint=(1, 0.05),
+            font_name=APP_FONT if APP_FONT else "Roboto",
+            font_size=18
+        )
+
+        row_type = BoxLayout(size_hint=(1, 0.08), spacing=4)
+
         types = [
-            ("عشوائي","random"),
-            ("آية","ayah"),
-            ("حديث","hadith"),
-            ("ذكر","dhikr"),
-            ("دعاء","dua")
+            ("عشوائي", "random"),
+            ("آية", "ayah"),
+            ("حديث", "hadith"),
+            ("ذكر", "dhikr"),
+            ("دعاء", "dua")
         ]
 
-        for name,val in types:
-            b = Button(text=fix_ar(name), font_name="ArabicFont")
-            b.bind(on_press=lambda x,v=val: self.set_type(v))
-            row_type.add_widget(b)
+        for name, val in types:
+            btn = Button(
+                text=fix_ar(name),
+                font_name=APP_FONT if APP_FONT else "Roboto",
+                font_size=18
+            )
+            btn.bind(on_press=lambda x, v=val: self.set_type(v))
+            row_type.add_widget(btn)
 
-        # تصميم
-        row_design = BoxLayout(size_hint=(1,0.08))
-        for i in [1,2,3]:
-            b = Button(text=fix_ar(f"تصميم {i}"), font_name="ArabicFont")
-            b.bind(on_press=lambda x,d=i: self.set_design(d))
-            row_design.add_widget(b)
+        row_design = BoxLayout(size_hint=(1, 0.08), spacing=4)
 
-        btn_gen = Button(text=fix_ar("إنشاء حالة"), size_hint=(1,0.1), font_name="ArabicFont")
-        btn_save = Button(text=fix_ar("حفظ ومشاركة"), size_hint=(1,0.1), font_name="ArabicFont")
+        for i in [1, 2, 3]:
+            btn = Button(
+                text=fix_ar(f"تصميم {i}"),
+                font_name=APP_FONT if APP_FONT else "Roboto",
+                font_size=18
+            )
+            btn.bind(on_press=lambda x, d=i: self.set_design(d))
+            row_design.add_widget(btn)
 
-        btn_gen.bind(on_press=self.generate)
-        btn_save.bind(on_press=self.save)
+        self.btn_generate = Button(
+            text=fix_ar("إنشاء حالة"),
+            size_hint=(1, 0.1),
+            font_name=APP_FONT if APP_FONT else "Roboto",
+            font_size=22
+        )
+
+        self.btn_save = Button(
+            text=fix_ar("حفظ ومشاركة"),
+            size_hint=(1, 0.1),
+            font_name=APP_FONT if APP_FONT else "Roboto",
+            font_size=22
+        )
+
+        self.btn_generate.bind(on_press=self.generate)
+        self.btn_save.bind(on_press=self.save)
 
         root.add_widget(self.img)
         root.add_widget(self.msg)
         root.add_widget(row_type)
         root.add_widget(row_design)
-        root.add_widget(btn_gen)
-        root.add_widget(btn_save)
+        root.add_widget(self.btn_generate)
+        root.add_widget(self.btn_save)
 
         self.generate()
 
         return root
 
-    def set_type(self,t):
+    def set_type(self, t):
         self.type = t
         self.generate()
 
-    def set_design(self,d):
+    def set_design(self, d):
         self.design = d
         self.generate()
 
     def pick_text(self):
-        if self.type=="ayah":
-            return get_random(AYAT_AR,self.last_text),"آية"
-        if self.type=="hadith":
-            return get_random(AHADITH_AR,self.last_text),"حديث"
-        if self.type=="dhikr":
-            return get_random(AZKAR_AR,self.last_text),"ذكر"
-        if self.type=="dua":
-            return get_random(DOAA_AR,self.last_text),"دعاء"
+        if self.type == "ayah":
+            return get_random(AYAT_AR, self.last_text), "آية اليوم"
+        if self.type == "hadith":
+            return get_random(AHADITH_AR, self.last_text), "حديث اليوم"
+        if self.type == "dhikr":
+            return get_random(AZKAR_AR, self.last_text), "ذكر اليوم"
+        if self.type == "dua":
+            return get_random(DOAA_AR, self.last_text), "دعاء اليوم"
 
         all_data = AYAT_AR + AHADITH_AR + AZKAR_AR + DOAA_AR
-        return get_random(all_data,self.last_text),"نفحة"
+        return get_random(all_data, self.last_text), "نفحة إيمانية"
 
-    def generate(self,*args):
-        text,kind = self.pick_text()
-        self.last_text = text
+    def generate(self, *args):
+        try:
+            text, kind = self.pick_text()
+            self.last_text = text
 
-        make_status(self.temp,text,self.design,kind)
+            make_status(self.temp, text, self.design, kind)
 
-        self.img.source = self.temp
-        self.img.reload()
+            self.img.source = ""
+            self.img.source = self.temp
+            self.img.reload()
 
-        self.msg.text = fix_ar("تم إنشاء الصورة")
+            self.msg.text = fix_ar("تم إنشاء الصورة")
+        except Exception as e:
+            self.msg.text = str(e)
 
-    def save(self,*args):
-        os.makedirs(SAVE_DIR,exist_ok=True)
+    def save(self, *args):
+        try:
+            os.makedirs(SAVE_DIR, exist_ok=True)
 
-        path = os.path.join(SAVE_DIR,f"status_{int(datetime.datetime.now().timestamp())}.jpg")
-        shutil.copy(self.temp,path)
+            path = os.path.join(
+                SAVE_DIR,
+                f"status_{int(datetime.datetime.now().timestamp())}.jpg"
+            )
 
-        self.msg.text = fix_ar("تم الحفظ")
-        share_image(path)
+            shutil.copy(self.temp, path)
+
+            self.msg.text = fix_ar("تم الحفظ في المعرض")
+            share_image(path)
+
+        except Exception as e:
+            self.msg.text = "Save Error: " + str(e)
 
 
 IslamApp().run()
