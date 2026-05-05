@@ -8,8 +8,7 @@ source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
 version = 5.1
 
-requirements = python3,kivy,pillow,arabic-reshaper,python-bidi
-
+requirements = python3,kivy,pillow,arabic-reshaper
 orientation = portrait
 fullscreen = 0
 
