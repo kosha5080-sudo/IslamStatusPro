@@ -7,10 +7,12 @@ from kivy.app import App
 from kivy.core.window import Window
 from kivy.core.text import LabelBase
 from kivy.resources import resource_find
+from kivy.storage.jsonstore import JsonStore
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.label import Label
+from kivy.uix.screenmanager import ScreenManager, Screen
 
 from PIL import Image as PILImage
 from PIL import ImageDraw, ImageFont
@@ -24,21 +26,24 @@ except:
     def fix_ar(text):
         return str(text)[::-1]
 
-
 from content import AYAT_AR, AHADITH_AR, AZKAR_AR, DOAA_AR
 
 
 Window.clearcolor = (0, 0, 0, 1)
 
 SAVE_DIR = "/sdcard/Pictures/IslamStatusPro"
-
 FONT_FILE = "arabic.ttf"
 FONT_PATH = resource_find(FONT_FILE) or FONT_FILE
+SETTINGS_FILE = "settings.json"
 
 try:
     LabelBase.register(name="ArabicFont", fn_regular=FONT_PATH)
 except:
     pass
+
+
+def ui(text):
+    return fix_ar(text)
 
 
 def get_font(size):
@@ -134,6 +139,21 @@ def make_status(path, text, design, kind):
     img.save(path, quality=95)
 
 
+def scan_gallery(path):
+    try:
+        from jnius import autoclass
+        MediaScannerConnection = autoclass("android.media.MediaScannerConnection")
+        PythonActivity = autoclass("org.kivy.android.PythonActivity")
+        MediaScannerConnection.scanFile(
+            PythonActivity.mActivity,
+            [path],
+            ["image/jpeg"],
+            None
+        )
+    except:
+        pass
+
+
 def share_image(path):
     try:
         from jnius import autoclass
@@ -156,26 +176,163 @@ def share_image(path):
         pass
 
 
-class IslamApp(App):
+class MainScreen(Screen):
 
-    def build(self):
-        self.design = 1
-        self.last_text = ""
-        self.type = "random"
-        self.temp = os.path.join(self.user_data_dir, "preview.jpg")
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        self.app_ref = None
 
         root = BoxLayout(orientation="vertical", padding=8, spacing=8)
 
-        self.img = Image(size_hint=(1, 0.55), allow_stretch=True, keep_ratio=True)
+        top = BoxLayout(size_hint=(1, 0.06), spacing=5)
+
+        self.title = Label(
+            text=ui("حالات واتس اسلامية"),
+            font_name="ArabicFont",
+            font_size=18
+        )
+
+        self.settings_btn = Button(
+            text="⚙",
+            size_hint=(0.18, 1),
+            font_size=24
+        )
+        self.settings_btn.bind(on_press=self.open_settings)
+
+        top.add_widget(self.title)
+        top.add_widget(self.settings_btn)
+
+        self.img = Image(size_hint=(1, 0.52), allow_stretch=True, keep_ratio=True)
 
         self.msg = Label(
-            text=fix_ar("جاهز"),
+            text=ui("جاهز"),
             size_hint=(1, 0.05),
             font_name="ArabicFont",
             font_size=18
         )
 
-        row_type = BoxLayout(size_hint=(1, 0.08), spacing=4)
+        self.btn_generate = Button(
+            text=ui("إنشاء حالة"),
+            size_hint=(1, 0.11),
+            font_name="ArabicFont",
+            font_size=22
+        )
+
+        self.btn_save = Button(
+            text=ui("حفظ في المعرض"),
+            size_hint=(1, 0.11),
+            font_name="ArabicFont",
+            font_size=22
+        )
+
+        self.btn_share = Button(
+            text=ui("مشاركة"),
+            size_hint=(1, 0.11),
+            font_name="ArabicFont",
+            font_size=22
+        )
+
+        self.btn_generate.bind(on_press=self.generate)
+        self.btn_save.bind(on_press=self.save_only)
+        self.btn_share.bind(on_press=self.share_only)
+
+        root.add_widget(top)
+        root.add_widget(self.img)
+        root.add_widget(self.msg)
+        root.add_widget(self.btn_generate)
+        root.add_widget(self.btn_save)
+        root.add_widget(self.btn_share)
+
+        self.add_widget(root)
+
+    def open_settings(self, *args):
+        self.manager.current = "settings"
+
+    def on_pre_enter(self):
+        self.app_ref = App.get_running_app()
+        self.generate()
+
+    def pick_text(self):
+        t = self.app_ref.content_type
+
+        if t == "ayah":
+            return get_random(AYAT_AR, self.app_ref.last_text), "آية اليوم"
+
+        if t == "hadith":
+            return get_random(AHADITH_AR, self.app_ref.last_text), "حديث اليوم"
+
+        if t == "dhikr":
+            return get_random(AZKAR_AR, self.app_ref.last_text), "ذكر اليوم"
+
+        if t == "dua":
+            return get_random(DOAA_AR, self.app_ref.last_text), "دعاء اليوم"
+
+        all_data = AYAT_AR + AHADITH_AR + AZKAR_AR + DOAA_AR
+        return get_random(all_data, self.app_ref.last_text), "نفحة إيمانية"
+
+    def generate(self, *args):
+        text, kind = self.pick_text()
+        self.app_ref.last_text = text
+
+        make_status(
+            self.app_ref.temp,
+            text,
+            self.app_ref.design,
+            kind
+        )
+
+        self.img.source = ""
+        self.img.source = self.app_ref.temp
+        self.img.reload()
+
+        self.msg.text = ui("تم إنشاء الصورة")
+
+    def save_only(self, *args):
+        os.makedirs(SAVE_DIR, exist_ok=True)
+
+        path = os.path.join(
+            SAVE_DIR,
+            f"status_{int(datetime.datetime.now().timestamp())}.jpg"
+        )
+
+        shutil.copy(self.app_ref.temp, path)
+        scan_gallery(path)
+
+        self.app_ref.last_saved_path = path
+        self.msg.text = ui("تم الحفظ في المعرض")
+
+    def share_only(self, *args):
+        if not self.app_ref.last_saved_path or not os.path.exists(self.app_ref.last_saved_path):
+            self.save_only()
+
+        share_image(self.app_ref.last_saved_path)
+
+
+class SettingsScreen(Screen):
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+        root = BoxLayout(orientation="vertical", padding=10, spacing=8)
+
+        title = Label(
+            text=ui("الإعدادات"),
+            size_hint=(1, 0.08),
+            font_name="ArabicFont",
+            font_size=24
+        )
+
+        root.add_widget(title)
+
+        root.add_widget(Label(
+            text=ui("نوع المحتوى"),
+            size_hint=(1, 0.06),
+            font_name="ArabicFont",
+            font_size=18
+        ))
+
+        row_type = BoxLayout(size_hint=(1, 0.1), spacing=4)
 
         types = [
             ("عشوائي", "random"),
@@ -186,98 +343,144 @@ class IslamApp(App):
         ]
 
         for name, val in types:
-            btn = Button(
-                text=fix_ar(name),
-                font_name="ArabicFont",
-                font_size=18
-            )
-            btn.bind(on_press=lambda x, v=val: self.set_type(v))
-            row_type.add_widget(btn)
+            b = Button(text=ui(name), font_name="ArabicFont")
+            b.bind(on_press=lambda x, v=val: self.set_content(v))
+            row_type.add_widget(b)
 
-        row_design = BoxLayout(size_hint=(1, 0.08), spacing=4)
+        root.add_widget(row_type)
+
+        root.add_widget(Label(
+            text=ui("التصميم"),
+            size_hint=(1, 0.06),
+            font_name="ArabicFont",
+            font_size=18
+        ))
+
+        row_design = BoxLayout(size_hint=(1, 0.1), spacing=4)
 
         for i in [1, 2, 3]:
-            btn = Button(
-                text=fix_ar(f"تصميم {i}"),
-                font_name="ArabicFont",
-                font_size=18
-            )
-            btn.bind(on_press=lambda x, d=i: self.set_design(d))
-            row_design.add_widget(btn)
+            b = Button(text=ui(f"تصميم {i}"), font_name="ArabicFont")
+            b.bind(on_press=lambda x, d=i: self.set_design(d))
+            row_design.add_widget(b)
 
-        btn_gen = Button(
-            text=fix_ar("إنشاء حالة"),
-            size_hint=(1, 0.1),
-            font_name="ArabicFont",
-            font_size=22
-        )
-
-        btn_save = Button(
-            text=fix_ar("حفظ ومشاركة"),
-            size_hint=(1, 0.1),
-            font_name="ArabicFont",
-            font_size=22
-        )
-
-        btn_gen.bind(on_press=self.generate)
-        btn_save.bind(on_press=self.save)
-
-        root.add_widget(self.img)
-        root.add_widget(self.msg)
-        root.add_widget(row_type)
         root.add_widget(row_design)
-        root.add_widget(btn_gen)
-        root.add_widget(btn_save)
 
-        self.generate()
+        root.add_widget(Label(
+            text=ui("الإشعارات"),
+            size_hint=(1, 0.06),
+            font_name="ArabicFont",
+            font_size=18
+        ))
 
-        return root
+        row_notify = BoxLayout(size_hint=(1, 0.1), spacing=4)
 
-    def set_type(self, t):
-        self.type = t
-        self.generate()
+        self.notify_btn = Button(text=ui("الإشعار: إيقاف"), font_name="ArabicFont")
+        self.notify_btn.bind(on_press=self.toggle_notify)
 
-    def set_design(self, d):
-        self.design = d
-        self.generate()
+        self.hour_btn = Button(text=ui("الساعة: 9"), font_name="ArabicFont")
+        self.hour_btn.bind(on_press=self.change_hour)
 
-    def pick_text(self):
-        if self.type == "ayah":
-            return get_random(AYAT_AR, self.last_text), "آية اليوم"
-        if self.type == "hadith":
-            return get_random(AHADITH_AR, self.last_text), "حديث اليوم"
-        if self.type == "dhikr":
-            return get_random(AZKAR_AR, self.last_text), "ذكر اليوم"
-        if self.type == "dua":
-            return get_random(DOAA_AR, self.last_text), "دعاء اليوم"
+        row_notify.add_widget(self.notify_btn)
+        row_notify.add_widget(self.hour_btn)
 
-        all_data = AYAT_AR + AHADITH_AR + AZKAR_AR + DOAA_AR
-        return get_random(all_data, self.last_text), "نفحة إيمانية"
+        root.add_widget(row_notify)
 
-    def generate(self, *args):
-        text, kind = self.pick_text()
-        self.last_text = text
-
-        make_status(self.temp, text, self.design, kind)
-
-        self.img.source = ""
-        self.img.source = self.temp
-        self.img.reload()
-
-        self.msg.text = fix_ar("تم إنشاء الصورة")
-
-    def save(self, *args):
-        os.makedirs(SAVE_DIR, exist_ok=True)
-
-        path = os.path.join(
-            SAVE_DIR,
-            f"status_{int(datetime.datetime.now().timestamp())}.jpg"
+        self.status = Label(
+            text=ui("تم حفظ الإعدادات تلقائياً"),
+            size_hint=(1, 0.08),
+            font_name="ArabicFont",
+            font_size=16
         )
 
-        shutil.copy(self.temp, path)
+        root.add_widget(self.status)
 
-        self.msg.text = fix_ar("تم الحفظ")
-        share_image(path)
+        back = Button(
+            text=ui("رجوع"),
+            size_hint=(1, 0.12),
+            font_name="ArabicFont",
+            font_size=22
+        )
+        back.bind(on_press=self.go_back)
+
+        root.add_widget(back)
+
+        self.add_widget(root)
+
+    def on_pre_enter(self):
+        app = App.get_running_app()
+        self.notify_btn.text = ui("الإشعار: تشغيل") if app.notify else ui("الإشعار: إيقاف")
+        self.hour_btn.text = ui(f"الساعة: {app.notify_hour}")
+
+    def set_content(self, value):
+        app = App.get_running_app()
+        app.content_type = value
+        app.save_settings()
+        self.status.text = ui("تم حفظ نوع المحتوى")
+
+    def set_design(self, value):
+        app = App.get_running_app()
+        app.design = value
+        app.save_settings()
+        self.status.text = ui("تم حفظ التصميم")
+
+    def toggle_notify(self, *args):
+        app = App.get_running_app()
+        app.notify = not app.notify
+        app.save_settings()
+        self.notify_btn.text = ui("الإشعار: تشغيل") if app.notify else ui("الإشعار: إيقاف")
+        self.status.text = ui("تم حفظ الإشعارات")
+
+    def change_hour(self, *args):
+        app = App.get_running_app()
+        app.notify_hour += 1
+        if app.notify_hour > 23:
+            app.notify_hour = 0
+        app.save_settings()
+        self.hour_btn.text = ui(f"الساعة: {app.notify_hour}")
+        self.status.text = ui("تم حفظ الساعة")
+
+    def go_back(self, *args):
+        self.manager.current = "main"
+
+
+class IslamApp(App):
+
+    def build(self):
+        self.store = JsonStore(SETTINGS_FILE)
+
+        self.design = 1
+        self.content_type = "random"
+        self.notify = False
+        self.notify_hour = 9
+        self.last_text = ""
+        self.last_saved_path = ""
+
+        self.temp = os.path.join(self.user_data_dir, "preview.jpg")
+
+        self.load_settings()
+
+        sm = ScreenManager()
+        sm.add_widget(MainScreen(name="main"))
+        sm.add_widget(SettingsScreen(name="settings"))
+
+        return sm
+
+    def load_settings(self):
+        if self.store.exists("prefs"):
+            prefs = self.store.get("prefs")
+            self.design = prefs.get("design", 1)
+            self.content_type = prefs.get("content_type", "random")
+            self.notify = prefs.get("notify", False)
+            self.notify_hour = prefs.get("notify_hour", 9)
+
+    def save_settings(self):
+        self.store.put(
+            "prefs",
+            design=self.design,
+            content_type=self.content_type,
+            notify=self.notify,
+            notify_hour=self.notify_hour
+        )
 
 
 IslamApp().run()
