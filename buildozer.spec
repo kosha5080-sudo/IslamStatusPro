@@ -6,9 +6,10 @@ package.domain = com.islam
 
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
-version = 5.1
+version = 5.2
 
 requirements = python3,kivy,pillow,arabic-reshaper
+
 orientation = portrait
 fullscreen = 0
 
@@ -22,6 +23,12 @@ android.api = 30
 android.minapi = 21
 android.ndk = 25b
 android.accept_sdk_license = True
+
+android.release_artifact = aab
+android.keystore = release.keystore
+android.keyalias = islamkey
+android.keystore_passwd = 123456
+android.keyalias_passwd = 123456
 
 [buildozer]
 
