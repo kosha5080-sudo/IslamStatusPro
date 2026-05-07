@@ -1,9 +1,8 @@
 [app]
 
 title = حالات واتس اب اسلاميه
-package.name = halatwatssislamia
-package.domain = com.islam
-
+package.name = islamicstatus
+package.domain = com.halat
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
 version = 5.2
