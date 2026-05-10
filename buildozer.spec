@@ -1,12 +1,11 @@
 [app]
 
 title = حالات واتس اب اسلاميه
-package.name = islamicstatus
-package.domain = com.halat
+package.name = islamicstatuspro
+package.domain = com.islam.new
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
-version = 5.2
-
+version = 1.0
 requirements = python3,kivy,pillow,arabic-reshaper
 
 orientation = portrait
