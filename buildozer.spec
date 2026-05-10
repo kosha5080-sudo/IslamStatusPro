@@ -1,6 +1,6 @@
 [app]
 
-title = حالات واتس اب اسلاميه
+title = Islamic Status Pro
 package.name = islamicstatuspro
 package.domain = com.islam.new
 source.dir = .
