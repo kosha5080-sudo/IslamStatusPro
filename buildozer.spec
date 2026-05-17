@@ -2,7 +2,7 @@
 
 title = Islamic Status Pro
 package.name = islamicstatuspro
-package.domain = com.islam.new
+package.domain = com.islamstatus
 source.dir = .
 source.include_exts = py,png,jpg,kv,ttf
 version = 1.0
